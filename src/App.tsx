@@ -391,7 +391,7 @@ export default function IPOFrontOfficeApp() {
               </button>
 
               <button className="bg-gray-800 text-white px-6 py-3 rounded-2xl shadow hover:opacity-90 transition">
-                Supervisor Approval
+                Approval
               </button>
             </div>
           </div>
