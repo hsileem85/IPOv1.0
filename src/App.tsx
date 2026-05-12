@@ -2,7 +2,8 @@ import React, { useState, useMemo } from "react";
 
 export default function IPOSystem() {
   const [userRole, setUserRole] = useState("FrontOffice"); // FrontOffice or BackOffice
-  const [activeTab, setActiveTab] = useState(1);
+  const [activeTab, setActiveTab] = useState(1); // For Front Office Stepper
+  const [boActiveTab, setBoActiveTab] = useState("Reconciliation"); // For Back Office Navigation
 
   // --- SHARED DATA (MOCK DATABASE) ---
   const [subscriptions, setSubscriptions] = useState([
@@ -35,6 +36,50 @@ export default function IPOSystem() {
     },
   ]);
 
+  // --- MCDR MOCK DATA ---
+  const [mcdrClients, setMcdrClients] = useState([
+    {
+      id: 1,
+      name: "حسين سليم محمد علي",
+      unifiedCode: "8800318",
+      nationalId: "28512111234567",
+      eligibleShares: 10000,
+      subscribedShares: 5000,
+      balanceEGP: 150000,
+      status: "Partial", // Full, Partial, None
+    },
+    {
+      id: 2,
+      name: "رنا الشافعي إبراهيم",
+      unifiedCode: "7744312",
+      nationalId: "28805051234568",
+      eligibleShares: 2000,
+      subscribedShares: 2000,
+      balanceEGP: 50000,
+      status: "Full",
+    },
+    {
+      id: 3,
+      name: "أحمد محمد علي",
+      unifiedCode: "1122334",
+      nationalId: "29001011234567",
+      eligibleShares: 5000,
+      subscribedShares: 0,
+      balanceEGP: 0,
+      status: "None",
+    },
+    {
+      id: 4,
+      name: "شركة النور للاستثمار",
+      unifiedCode: "9900112",
+      nationalId: "123456789", // CR Number
+      eligibleShares: 50000,
+      subscribedShares: 50000,
+      balanceEGP: 2500000,
+      status: "Full",
+    },
+  ]);
+
   // --- FRONT OFFICE STATE ---
   const [nationalId, setNationalId] = useState("");
   const [showClientPanel, setShowClientPanel] = useState(false);
@@ -45,6 +90,8 @@ export default function IPOSystem() {
 
   // --- BACK OFFICE STATE ---
   const [reconFilter, setReconFilter] = useState("All");
+  const [mcdrSearchQuery, setMcdrSearchQuery] = useState("");
+  const [mcdrFilter, setMcdrFilter] = useState("All");
 
   // --- STYLING CONSTANTS ---
   const sectionStyle =
@@ -59,6 +106,25 @@ export default function IPOSystem() {
     if (reconFilter === "All") return subscriptions;
     return subscriptions.filter((s) => s.status === reconFilter);
   }, [reconFilter, subscriptions]);
+
+  const filteredMcdr = useMemo(() => {
+    let filtered = mcdrClients;
+    // Filter by Status
+    if (mcdrFilter !== "All") {
+      filtered = filtered.filter((c) => c.status === mcdrFilter);
+    }
+    // Filter by Search Query
+    if (mcdrSearchQuery) {
+      const lowerQuery = mcdrSearchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (c) =>
+          c.name.toLowerCase().includes(lowerQuery) ||
+          c.nationalId.includes(lowerQuery) ||
+          c.unifiedCode.includes(lowerQuery)
+      );
+    }
+    return filtered;
+  }, [mcdrFilter, mcdrSearchQuery, mcdrClients]);
 
   return (
     <div className="min-h-screen bg-[#f8fafc] p-4 md:p-8 font-sans text-slate-900">
@@ -82,7 +148,7 @@ export default function IPOSystem() {
             <button
               onClick={() => {
                 setUserRole("BackOffice");
-                setActiveTab(1);
+                setBoActiveTab("Reconciliation");
               }}
               className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${
                 userRole === "BackOffice"
@@ -111,8 +177,8 @@ export default function IPOSystem() {
           </div>
           {userRole === "BackOffice" && (
             <div className="flex gap-3">
-              <button className="bg-white text-slate-700 px-5 py-2.5 rounded-xl border border-slate-200 font-bold text-sm hover:bg-slate-50 transition">
-                Export MCDR File
+              <button className="bg-white text-slate-700 px-5 py-2.5 rounded-xl border border-slate-200 font-bold text-sm hover:bg-slate-50 transition shadow-sm">
+                Export Current Data
               </button>
               <button className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition">
                 Execute Allocation
@@ -122,7 +188,7 @@ export default function IPOSystem() {
         </div>
 
         {/* --------------------------- */}
-        {/*      FRONT OFFICE MODULE    */}
+        {/* FRONT OFFICE MODULE    */}
         {/* --------------------------- */}
         {userRole === "FrontOffice" && (
           <div className="space-y-6">
@@ -383,163 +449,351 @@ export default function IPOSystem() {
         )}
 
         {/* --------------------------- */}
-        {/*       BACK OFFICE MODULE    */}
+        {/* BACK OFFICE MODULE    */}
         {/* --------------------------- */}
         {userRole === "BackOffice" && (
           <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-700">
-            {/* STATS OVERVIEW */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              {[
-                {
-                  label: "Total Subscriptions",
-                  val: subscriptions.length,
-                  color: "text-slate-800",
-                },
-                {
-                  label: "Coverage Ratio",
-                  val: "3.2x",
-                  color: "text-green-600",
-                },
-                { label: "Exceptions", val: "12", color: "text-red-500" },
-                {
-                  label: "Total Cash (EGP)",
-                  val: "1.24M",
-                  color: "text-blue-600",
-                },
-              ].map((stat, i) => (
-                <div
-                  key={i}
-                  className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center"
-                >
-                  <p className={labelStyle}>{stat.label}</p>
-                  <p className={`text-3xl font-black mt-1 ${stat.color}`}>
-                    {stat.val}
-                  </p>
-                </div>
-              ))}
+            {/* BACK OFFICE NAVIGATION TABS */}
+            <div className="flex gap-4 mb-2 border-b border-slate-200 pb-4">
+              <button
+                onClick={() => setBoActiveTab("Reconciliation")}
+                className={`text-sm font-black px-4 py-2 rounded-xl transition ${
+                  boActiveTab === "Reconciliation"
+                    ? "bg-indigo-50 text-indigo-700"
+                    : "text-slate-500 hover:bg-slate-100"
+                }`}
+              >
+                Reconciliation & Bank Files
+              </button>
+              <button
+                onClick={() => setBoActiveTab("MCDR")}
+                className={`text-sm font-black px-4 py-2 rounded-xl transition ${
+                  boActiveTab === "MCDR"
+                    ? "bg-indigo-50 text-indigo-700"
+                    : "text-slate-500 hover:bg-slate-100"
+                }`}
+              >
+                MCDR Eligibility & Clients
+              </button>
             </div>
 
-            {/* EXCEPTION QUEUE */}
-            <div className={sectionStyle}>
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-                <h2 className="text-2xl font-black text-slate-800 tracking-tight">
-                  Reconciliation Queue
-                </h2>
-                <div className="flex bg-slate-100 p-1 rounded-xl gap-1">
-                  {["All", "Verified", "Shortfall", "Pending Payment"].map(
-                    (status) => (
-                      <button
-                        key={status}
-                        onClick={() => setReconFilter(status)}
-                        className={`px-4 py-1.5 text-xs font-black rounded-lg transition-all ${
-                          reconFilter === status
-                            ? "bg-white text-slate-900 shadow-sm"
-                            : "text-slate-500 hover:text-slate-700"
-                        }`}
-                      >
-                        {status}
-                      </button>
-                    )
-                  )}
+            {/* --- RECONCILIATION TAB --- */}
+            {boActiveTab === "Reconciliation" && (
+              <>
+                {/* STATS OVERVIEW */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  {[
+                    {
+                      label: "Total Subscriptions",
+                      val: subscriptions.length,
+                      color: "text-slate-800",
+                    },
+                    {
+                      label: "Coverage Ratio",
+                      val: "3.2x",
+                      color: "text-green-600",
+                    },
+                    { label: "Exceptions", val: "12", color: "text-red-500" },
+                    {
+                      label: "Total Cash (EGP)",
+                      val: "1.24M",
+                      color: "text-blue-600",
+                    },
+                  ].map((stat, i) => (
+                    <div
+                      key={i}
+                      className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center"
+                    >
+                      <p className={labelStyle}>{stat.label}</p>
+                      <p className={`text-3xl font-black mt-1 ${stat.color}`}>
+                        {stat.val}
+                      </p>
+                    </div>
+                  ))}
                 </div>
-              </div>
 
-              <div className="overflow-x-auto rounded-2xl border border-slate-50">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50/50">
-                      <th className="py-4 font-black text-slate-400 text-[10px] uppercase tracking-widest px-4">
-                        Investor / National ID
-                      </th>
-                      <th className="py-4 font-black text-slate-400 text-[10px] uppercase tracking-widest px-4">
-                        Branch
-                      </th>
-                      <th className="py-4 font-black text-slate-400 text-[10px] uppercase tracking-widest px-4 text-right">
-                        Due (EGP)
-                      </th>
-                      <th className="py-4 font-black text-slate-400 text-[10px] uppercase tracking-widest px-4 text-right">
-                        Paid (EGP)
-                      </th>
-                      <th className="py-4 font-black text-slate-400 text-[10px] uppercase tracking-widest px-4">
-                        Status
-                      </th>
-                      <th className="py-4 font-black text-slate-400 text-[10px] uppercase tracking-widest px-4 text-center">
-                        Control
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredRecon.map((sub) => (
-                      <tr
-                        key={sub.id}
-                        className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors"
-                      >
-                        <td className="py-5 px-4">
-                          <p className="font-bold text-slate-900 leading-tight">
-                            {sub.name}
-                          </p>
-                          <p className="text-xs font-mono text-slate-400 mt-0.5">
-                            {sub.nationalId}
-                          </p>
-                        </td>
-                        <td className="py-5 px-4 text-sm text-slate-500 font-bold">
-                          {sub.branch}
-                        </td>
-                        <td className="py-5 px-4 text-sm font-bold text-slate-400 text-right">
-                          {sub.amountDue.toLocaleString()}
-                        </td>
-                        <td className="py-5 px-4 text-sm font-black text-indigo-600 text-right">
-                          {sub.amountPaid.toLocaleString()}
-                        </td>
-                        <td className="py-5 px-4">
-                          <span
-                            className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter ${
-                              sub.status === "Verified"
-                                ? "bg-green-100 text-green-700"
-                                : sub.status === "Shortfall"
-                                ? "bg-red-100 text-red-700"
-                                : "bg-amber-100 text-amber-700"
+                {/* EXCEPTION QUEUE */}
+                <div className={sectionStyle}>
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                    <h2 className="text-2xl font-black text-slate-800 tracking-tight">
+                      Reconciliation Queue
+                    </h2>
+                    <div className="flex bg-slate-100 p-1 rounded-xl gap-1">
+                      {["All", "Verified", "Shortfall", "Pending Payment"].map(
+                        (status) => (
+                          <button
+                            key={status}
+                            onClick={() => setReconFilter(status)}
+                            className={`px-4 py-1.5 text-xs font-black rounded-lg transition-all ${
+                              reconFilter === status
+                                ? "bg-white text-slate-900 shadow-sm"
+                                : "text-slate-500 hover:text-slate-700"
                             }`}
                           >
-                            {sub.status}
-                          </span>
-                        </td>
-                        <td className="py-5 px-4 text-center">
-                          <div className="flex justify-center gap-4">
-                            <button className="text-blue-600 font-black text-[10px] uppercase hover:underline">
-                              Manual Match
-                            </button>
-                            <button className="text-red-500 font-black text-[10px] uppercase hover:underline">
-                              Refund
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="mt-8 p-8 bg-slate-900 rounded-[2.5rem] flex flex-col md:flex-row justify-between items-center gap-6 shadow-2xl shadow-slate-200">
-                <div className="flex items-center gap-6">
-                  <div className="w-14 h-14 bg-blue-500 rounded-2xl flex items-center justify-center text-white text-2xl shadow-inner">
-                    ↑
+                            {status}
+                          </button>
+                        )
+                      )}
+                    </div>
                   </div>
-                  <div className="text-center md:text-left">
-                    <p className="text-white font-black text-lg">
-                      Bank Statement Integration
-                    </p>
-                    <p className="text-slate-400 text-sm max-w-xs">
-                      Upload MT940 or Excel to auto-match funds against
-                      subscriptions.
-                    </p>
+
+                  <div className="overflow-x-auto rounded-2xl border border-slate-50">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50/50">
+                          <th className="py-4 font-black text-slate-400 text-[10px] uppercase tracking-widest px-4">
+                            Investor / National ID
+                          </th>
+                          <th className="py-4 font-black text-slate-400 text-[10px] uppercase tracking-widest px-4">
+                            Branch
+                          </th>
+                          <th className="py-4 font-black text-slate-400 text-[10px] uppercase tracking-widest px-4 text-right">
+                            Due (EGP)
+                          </th>
+                          <th className="py-4 font-black text-slate-400 text-[10px] uppercase tracking-widest px-4 text-right">
+                            Paid (EGP)
+                          </th>
+                          <th className="py-4 font-black text-slate-400 text-[10px] uppercase tracking-widest px-4">
+                            Status
+                          </th>
+                          <th className="py-4 font-black text-slate-400 text-[10px] uppercase tracking-widest px-4 text-center">
+                            Control
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredRecon.map((sub) => (
+                          <tr
+                            key={sub.id}
+                            className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors"
+                          >
+                            <td className="py-5 px-4">
+                              <p className="font-bold text-slate-900 leading-tight">
+                                {sub.name}
+                              </p>
+                              <p className="text-xs font-mono text-slate-400 mt-0.5">
+                                {sub.nationalId}
+                              </p>
+                            </td>
+                            <td className="py-5 px-4 text-sm text-slate-500 font-bold">
+                              {sub.branch}
+                            </td>
+                            <td className="py-5 px-4 text-sm font-bold text-slate-400 text-right">
+                              {sub.amountDue.toLocaleString()}
+                            </td>
+                            <td className="py-5 px-4 text-sm font-black text-indigo-600 text-right">
+                              {sub.amountPaid.toLocaleString()}
+                            </td>
+                            <td className="py-5 px-4">
+                              <span
+                                className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter ${
+                                  sub.status === "Verified"
+                                    ? "bg-green-100 text-green-700"
+                                    : sub.status === "Shortfall"
+                                    ? "bg-red-100 text-red-700"
+                                    : "bg-amber-100 text-amber-700"
+                                }`}
+                              >
+                                {sub.status}
+                              </span>
+                            </td>
+                            <td className="py-5 px-4 text-center">
+                              <div className="flex justify-center gap-4">
+                                <button className="text-blue-600 font-black text-[10px] uppercase hover:underline">
+                                  Manual Match
+                                </button>
+                                <button className="text-red-500 font-black text-[10px] uppercase hover:underline">
+                                  Refund
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* BANK UPLOAD WIDGET */}
+                  <div className="mt-8 p-8 bg-slate-900 rounded-[2.5rem] flex flex-col md:flex-row justify-between items-center gap-6 shadow-2xl shadow-slate-200">
+                    <div className="flex items-center gap-6">
+                      <div className="w-14 h-14 bg-blue-500 rounded-2xl flex items-center justify-center text-white text-2xl shadow-inner">
+                        ↑
+                      </div>
+                      <div className="text-center md:text-left">
+                        <p className="text-white font-black text-lg">
+                          Bank Statement Integration
+                        </p>
+                        <p className="text-slate-400 text-sm max-w-xs">
+                          Upload MT940 or Excel to auto-match funds against
+                          subscriptions.
+                        </p>
+                      </div>
+                    </div>
+                    <button className="bg-white text-slate-900 px-10 py-4 rounded-2xl font-black text-sm hover:bg-blue-50 transition transform hover:scale-105">
+                      UPLOAD STATEMENT
+                    </button>
                   </div>
                 </div>
-                <button className="bg-white text-slate-900 px-10 py-4 rounded-2xl font-black text-sm hover:bg-blue-50 transition transform hover:scale-105">
-                  UPLOAD STATEMENT
-                </button>
+              </>
+            )}
+
+            {/* --- MCDR UPLOAD & ELIGIBILITY TAB --- */}
+            {boActiveTab === "MCDR" && (
+              <div className="space-y-6 animate-in fade-in duration-500">
+                {/* MCDR UPLOAD SECTION */}
+                <div className="bg-white rounded-3xl shadow-sm border-2 border-dashed border-indigo-200 p-10 flex flex-col items-center justify-center text-center hover:bg-indigo-50/50 transition cursor-pointer group">
+                  <div className="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-inner">
+                    <svg
+                      className="w-8 h-8"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+                      />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-black text-slate-800 mb-1">
+                    Upload Daily MCDR File
+                  </h3>
+                  <p className="text-slate-500 text-sm mb-4">
+                    Upload the official Excel sheet containing eligible clients,
+                    max quotas, and MCDR unified codes.
+                  </p>
+                  <label className="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition cursor-pointer">
+                    Browse Excel File
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept=".xlsx, .xls, .csv"
+                    />
+                  </label>
+                  <p className="text-xs text-slate-400 mt-4 font-mono">
+                    Last Upload: Today, 08:30 AM (System Sync: Success)
+                  </p>
+                </div>
+
+                {/* ELIGIBLE CLIENTS GRID SECTION */}
+                <div className={sectionStyle}>
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                    <h2 className="text-2xl font-black text-slate-800 tracking-tight">
+                      MCDR Client Eligibility List
+                    </h2>
+
+                    {/* Filters */}
+                    <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                      <input
+                        type="text"
+                        placeholder="Search Name, ID, or Unified Code..."
+                        className="border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none w-full sm:w-64"
+                        value={mcdrSearchQuery}
+                        onChange={(e) => setMcdrSearchQuery(e.target.value)}
+                      />
+                      <select
+                        className="border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white font-bold"
+                        value={mcdrFilter}
+                        onChange={(e) => setMcdrFilter(e.target.value)}
+                      >
+                        <option value="All">All Statuses</option>
+                        <option value="Full">Fully Subscribed</option>
+                        <option value="Partial">Partially Subscribed</option>
+                        <option value="None">Not Subscribed</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto rounded-2xl border border-slate-50">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-indigo-50/50">
+                          <th className="py-4 font-black text-indigo-400 text-[10px] uppercase tracking-widest px-4">
+                            Investor Name
+                          </th>
+                          <th className="py-4 font-black text-indigo-400 text-[10px] uppercase tracking-widest px-4">
+                            IDs (Unified / National)
+                          </th>
+                          <th className="py-4 font-black text-indigo-400 text-[10px] uppercase tracking-widest px-4 text-right">
+                            Eligible Quota
+                          </th>
+                          <th className="py-4 font-black text-indigo-400 text-[10px] uppercase tracking-widest px-4 text-right">
+                            Subscribed
+                          </th>
+                          <th className="py-4 font-black text-indigo-400 text-[10px] uppercase tracking-widest px-4 text-right">
+                            Available Balance (EGP)
+                          </th>
+                          <th className="py-4 font-black text-indigo-400 text-[10px] uppercase tracking-widest px-4 text-center">
+                            Status
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredMcdr.length > 0 ? (
+                          filteredMcdr.map((client) => (
+                            <tr
+                              key={client.id}
+                              className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors"
+                            >
+                              <td className="py-4 px-4">
+                                <p className="font-bold text-slate-900">
+                                  {client.name}
+                                </p>
+                              </td>
+                              <td className="py-4 px-4">
+                                <p className="text-sm font-bold text-slate-700">
+                                  U:{" "}
+                                  <span className="font-mono">
+                                    {client.unifiedCode}
+                                  </span>
+                                </p>
+                                <p className="text-xs font-mono text-slate-400 mt-0.5">
+                                  N: {client.nationalId}
+                                </p>
+                              </td>
+                              <td className="py-4 px-4 text-sm font-bold text-slate-500 text-right">
+                                {client.eligibleShares.toLocaleString()}
+                              </td>
+                              <td className="py-4 px-4 text-sm font-black text-indigo-600 text-right">
+                                {client.subscribedShares.toLocaleString()}
+                              </td>
+                              <td className="py-4 px-4 text-sm font-bold text-green-600 text-right">
+                                {client.balanceEGP.toLocaleString()}
+                              </td>
+                              <td className="py-4 px-4 text-center">
+                                <span
+                                  className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter inline-block w-20 text-center ${
+                                    client.status === "Full"
+                                      ? "bg-green-100 text-green-700"
+                                      : client.status === "Partial"
+                                      ? "bg-blue-100 text-blue-700"
+                                      : "bg-slate-100 text-slate-500"
+                                  }`}
+                                >
+                                  {client.status}
+                                </span>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td
+                              colSpan="6"
+                              className="text-center py-8 text-slate-400 font-bold"
+                            >
+                              No clients found matching the selected filters.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
       </div>
