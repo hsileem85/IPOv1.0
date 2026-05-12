@@ -1,544 +1,398 @@
-import React, { useState, useMemo } from "react";
+import { useState } from "react";
 
-export default function IPOSystem() {
-  const [userRole, setUserRole] = useState("FrontOffice"); // FrontOffice or BackOffice
+export default function IPOFrontOfficeApp() {
   const [activeTab, setActiveTab] = useState(1);
-
-  // --- SHARED DATA (MOCK DATABASE) ---
-  const [subscriptions, setSubscriptions] = useState([
-    {
-      id: "TX-9901",
-      name: "أحمد محمد علي",
-      nationalId: "29001011234567",
-      amountDue: 12500,
-      amountPaid: 12500,
-      status: "Verified",
-      branch: "Cairo-Main",
-    },
-    {
-      id: "TX-9902",
-      name: "سارة محمود حسن",
-      nationalId: "29505051234568",
-      amountDue: 5000,
-      amountPaid: 4500,
-      status: "Shortfall",
-      branch: "Alex-Branch",
-    },
-    {
-      id: "TX-9903",
-      name: "حسين سليم محمد",
-      nationalId: "111",
-      amountDue: 18750,
-      amountPaid: 0,
-      status: "Pending Payment",
-      branch: "Giza-Hub",
-    },
-  ]);
-
-  // --- FRONT OFFICE STATE ---
   const [nationalId, setNationalId] = useState("");
+  const [clientName, setClientName] = useState("");
   const [showClientPanel, setShowClientPanel] = useState(false);
-  const [qtyRequested, setQtyRequested] = useState(0);
-  const parValue = 1.0;
-  const issueFees = 0.25;
-  const totalPerShare = parValue + issueFees;
+  const [clientData, setClientData] = useState({
+    idExpireDate: "",
+    unifiedCode: "",
+    dob: "",
+    age: "",
+    eligibleQuantity: "",
+    idStatus: "",
+  });
 
-  // --- BACK OFFICE STATE ---
-  const [reconFilter, setReconFilter] = useState("All");
+  const tabs = [
+    "Client Identification",
+    "Subscription Entry",
+    "Document Upload",
+    "Transaction Summary",
+  ];
 
-  // --- STYLING CONSTANTS ---
-  const sectionStyle =
-    "bg-white rounded-3xl shadow-xl p-8 border border-gray-100 animate-in fade-in duration-500";
-  const inputStyle =
-    "w-full border-gray-200 border rounded-xl p-3 mt-2 focus:ring-2 focus:ring-blue-500 outline-none transition-all";
-  const labelStyle =
-    "block text-xs font-bold text-gray-500 uppercase tracking-wider";
-
-  // --- BACK OFFICE LOGIC ---
-  const filteredRecon = useMemo(() => {
-    if (reconFilter === "All") return subscriptions;
-    return subscriptions.filter((s) => s.status === reconFilter);
-  }, [reconFilter, subscriptions]);
+  const sectionStyle = "bg-white rounded-3xl shadow-md p-6";
+  const inputStyle = "w-full border rounded-xl p-3 mt-2";
+  const labelStyle = "block text-sm font-medium text-gray-700 mb-1";
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] p-4 md:p-8 font-sans text-slate-900">
+    <div className="min-h-screen bg-gray-100 p-8">
       <div className="max-w-7xl mx-auto">
-        {/* RBAC ROLE SWITCHER */}
-        <div className="flex justify-end mb-6">
-          <div className="bg-slate-200 p-1 rounded-2xl flex gap-1 shadow-inner">
-            <button
-              onClick={() => {
-                setUserRole("FrontOffice");
-                setActiveTab(1);
-              }}
-              className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${
-                userRole === "FrontOffice"
-                  ? "bg-white text-blue-600 shadow-sm"
-                  : "text-slate-500 hover:text-slate-700"
-              }`}
-            >
-              Front Office (Branch)
-            </button>
-            <button
-              onClick={() => {
-                setUserRole("BackOffice");
-                setActiveTab(1);
-              }}
-              className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${
-                userRole === "BackOffice"
-                  ? "bg-white text-indigo-600 shadow-sm"
-                  : "text-slate-500 hover:text-slate-700"
-              }`}
-            >
-              Back Office (HQ Ops)
-            </button>
-          </div>
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-gray-800 mb-2">
+            IPO & Capital Increase Subscription Module
+          </h1>
+          <p className="text-gray-600">
+            Front Office / Customer Service Workflow UI
+          </p>
         </div>
 
-        {/* DYNAMIC HEADER */}
-        <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
-          <div>
-            <h1 className="text-4xl font-black tracking-tight text-slate-900">
-              {userRole === "FrontOffice"
-                ? "Subscription Desk"
-                : "Operations Hub"}
-            </h1>
-            <p className="text-slate-500 font-medium mt-1">
-              {userRole === "FrontOffice"
-                ? "Customer Service Workflow • Branch: Cairo-Main"
-                : "Central Clearing & Reconciliation • System Admin"}
-            </p>
-          </div>
-          {userRole === "BackOffice" && (
-            <div className="flex gap-3">
-              <button className="bg-white text-slate-700 px-5 py-2.5 rounded-xl border border-slate-200 font-bold text-sm hover:bg-slate-50 transition">
-                Export MCDR File
-              </button>
-              <button className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition">
-                Execute Allocation
-              </button>
-            </div>
-          )}
-        </div>
+        <div className="bg-white rounded-3xl shadow-md p-8 mb-6">
+          <div className="relative flex items-center justify-between mb-6 overflow-x-auto">
+            <div className="absolute top-5 left-0 right-0 h-0.5 bg-gray-300 z-0"></div>
 
-        {/* --------------------------- */}
-        {/*      FRONT OFFICE MODULE    */}
-        {/* --------------------------- */}
-        {userRole === "FrontOffice" && (
-          <div className="space-y-6">
-            {/* Stepper Navigation */}
-            <div className="bg-white rounded-3xl shadow-sm p-6 border border-gray-100">
-              <div className="flex items-center justify-between max-w-4xl mx-auto">
-                {[
-                  "Identification",
-                  "Ektitab Entry",
-                  "Documentation",
-                  "Final Receipt",
-                ].map((label, i) => (
-                  <div
-                    key={label}
-                    className="flex flex-col items-center relative z-10"
-                  >
-                    <button
-                      onClick={() => setActiveTab(i + 1)}
-                      className={`w-12 h-12 rounded-full flex items-center justify-center font-bold transition-all border-4 ${
-                        activeTab === i + 1
-                          ? "bg-blue-600 border-blue-100 text-white scale-110 shadow-lg"
-                          : activeTab > i + 1
-                          ? "bg-green-500 border-green-100 text-white"
-                          : "bg-slate-50 border-transparent text-slate-400"
-                      }`}
-                    >
-                      {activeTab > i + 1 ? "✓" : i + 1}
-                    </button>
-                    <span
-                      className={`text-[10px] uppercase tracking-widest mt-3 font-black ${
-                        activeTab === i + 1 ? "text-blue-600" : "text-slate-400"
-                      }`}
-                    >
-                      {label}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* TAB 1: IDENTIFICATION */}
-            {activeTab === 1 && (
-              <div className={sectionStyle}>
-                <h2 className="text-2xl font-bold mb-6">
-                  Client KYC & Event Selection
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div>
-                    <label className={labelStyle}>
-                      National ID (14 Digits)
-                    </label>
-                    <input
-                      type="text"
-                      className={inputStyle}
-                      placeholder="Enter 290..."
-                      maxLength={14}
-                      onChange={(e) => {
-                        setNationalId(e.target.value);
-                        if (e.target.value === "111") setShowClientPanel(true);
-                        else setShowClientPanel(false);
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <label className={labelStyle}>Subscription Event</label>
-                    <select className={inputStyle}>
-                      <option>Sinawy Olive Oil IPO (SOO)</option>
-                      <option>Capital Increase - ABC Bank</option>
-                      <option>Rights Issue - Delta Insurance</option>
-                    </select>
-                  </div>
-
-                  {showClientPanel && (
-                    <div className="col-span-2 bg-gradient-to-r from-blue-600 to-blue-700 p-8 rounded-3xl text-white shadow-xl flex justify-between items-center transform transition-all hover:scale-[1.01]">
-                      <div>
-                        <p className="text-blue-100 text-xs font-bold uppercase tracking-widest mb-1">
-                          MCDR Verified Shareholder
-                        </p>
-                        <h3 className="text-3xl font-bold">
-                          حسين سليم محمد علي
-                        </h3>
-                        <div className="flex gap-4 mt-2 text-sm text-blue-100">
-                          <span>
-                            Unified:{" "}
-                            <span className="text-white font-mono">
-                              8800318
-                            </span>
-                          </span>
-                          <span>
-                            Status:{" "}
-                            <span className="bg-white/20 px-2 rounded text-white font-bold">
-                              Active
-                            </span>
-                          </span>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => setActiveTab(2)}
-                        className="bg-white text-blue-600 px-8 py-3 rounded-2xl font-black hover:bg-blue-50 transition shadow-lg"
-                      >
-                        NEXT STEP
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* TAB 2: SUBSCRIPTION ENTRY */}
-            {activeTab === 2 && (
-              <div className={sectionStyle}>
-                <h2 className="text-2xl font-bold mb-6">
-                  Subscription (Ektitab) Details
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className={labelStyle}>Quantity Requested</label>
-                      <input
-                        type="number"
-                        className={inputStyle}
-                        onChange={(e) =>
-                          setQtyRequested(Number(e.target.value))
-                        }
-                      />
-                    </div>
-                    <div>
-                      <label className={labelStyle}>Payment Method</label>
-                      <select className={inputStyle}>
-                        <option>Direct Debit (Account Block)</option>
-                        <option>Cash Deposit</option>
-                        <option>Certified Check</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Summary Box */}
-                  <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
-                    <p className={labelStyle}>Order Summary</p>
-                    <div className="mt-4 space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span>Par Value:</span>
-                        <span className="font-bold">{parValue} EGP</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span>Issue Fees:</span>
-                        <span className="font-bold">{issueFees} EGP</span>
-                      </div>
-                      <hr className="my-2" />
-                      <div className="flex justify-between text-lg font-black text-blue-700">
-                        <span>Total Due:</span>
-                        <span>
-                          {(qtyRequested * totalPerShare).toLocaleString()} EGP
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-8 flex gap-4">
-                  <button
-                    onClick={() => setActiveTab(3)}
-                    className="bg-blue-600 text-white px-10 py-3 rounded-xl font-bold shadow-lg"
-                  >
-                    Confirm & Upload Docs
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* TAB 3: DOCUMENTATION */}
-            {activeTab === 3 && (
-              <div className={sectionStyle}>
-                <h2 className="text-2xl font-bold mb-6">
-                  Required Documentation
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {[
-                    "National ID Copy",
-                    "Signed Subscription Form",
-                    "Bank Transfer Receipt",
-                    "POA (if applicable)",
-                  ].map((doc) => (
-                    <div
-                      key={doc}
-                      className="border-2 border-dashed border-slate-200 p-6 rounded-2xl flex items-center justify-between hover:border-blue-300 transition"
-                    >
-                      <span className="font-bold text-slate-600">{doc}</span>
-                      <input
-                        type="file"
-                        className="text-xs file:bg-blue-50 file:text-blue-600 file:border-none file:px-4 file:py-2 file:rounded-lg file:font-bold cursor-pointer"
-                      />
-                    </div>
-                  ))}
-                </div>
+            {tabs.map((tab, index) => (
+              <div
+                key={tab}
+                className="relative z-10 flex flex-col items-center min-w-[160px]"
+              >
                 <button
-                  onClick={() => setActiveTab(4)}
-                  className="mt-8 bg-blue-600 text-white px-10 py-3 rounded-xl font-bold shadow-lg"
+                  onClick={() => setActiveTab(index + 1)}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-300 border-4 ${
+                    activeTab === index + 1
+                      ? "bg-blue-600 border-blue-600 text-white scale-110 shadow-lg"
+                      : activeTab > index + 1
+                      ? "bg-green-500 border-green-500 text-white"
+                      : "bg-white border-gray-300 text-gray-600"
+                  }`}
                 >
-                  Review Final Summary
+                  {index + 1}
                 </button>
+
+                <span
+                  className={`mt-3 text-sm font-medium text-center transition ${
+                    activeTab === index + 1 ? "text-blue-700" : "text-gray-600"
+                  }`}
+                >
+                  {tab}
+                </span>
               </div>
-            )}
+            ))}
+          </div>
+        </div>
 
-            {/* TAB 4: SUMMARY/RECEIPT */}
-            {activeTab === 4 && (
-              <div className={sectionStyle}>
-                <div className="max-w-2xl mx-auto text-center">
-                  <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6 text-3xl font-bold">
-                    ✓
-                  </div>
-                  <h2 className="text-3xl font-black mb-2">
-                    Subscription Prepared
-                  </h2>
-                  <p className="text-slate-500 mb-8">
-                    TX-ID:{" "}
-                    <span className="font-mono font-bold">IPO-2026-8809</span>
+        {activeTab === 1 && (
+          <div className={sectionStyle}>
+            <h2 className="text-2xl font-semibold mb-6 text-gray-800">
+              Client Identification & Subscription Selection
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* National ID Input */}
+              <div>
+                <label className={labelStyle}>National ID / CR Number</label>
+                <input
+                  type="text"
+                  placeholder="Enter 14-digit National ID"
+                  className={inputStyle}
+                  value={nationalId}
+                  maxLength={14}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, "");
+                    if (value.length <= 14) {
+                      setNationalId(value);
+                    }
+                  }}
+                  onBlur={() => {
+                    if (nationalId === "28512118800318") {
+                      const dob = new Date("1985-12-11");
+                      const today = new Date();
+                      let age = today.getFullYear() - dob.getFullYear();
+                      const monthDiff = today.getMonth() - dob.getMonth();
+
+                      if (
+                        monthDiff < 0 ||
+                        (monthDiff === 0 && today.getDate() < dob.getDate())
+                      ) {
+                        age--;
+                      }
+
+                      setClientName("حسين سليم محمد علي");
+                      setShowClientPanel(true);
+                      const expireDate = new Date("2028-12-01");
+                      const sixMonthsFromToday = new Date();
+                      sixMonthsFromToday.setMonth(
+                        sixMonthsFromToday.getMonth() + 6
+                      );
+
+                      const idStatus =
+                        expireDate > sixMonthsFromToday
+                          ? "Active"
+                          : "Not Active";
+
+                      setClientData({
+                        idExpireDate: "01-12-2028",
+                        unifiedCode: "8800318",
+                        dob: "11-12-1985",
+                        age: age.toString(),
+                        eligibleQuantity: "15,000",
+                        idStatus,
+                      });
+                    } else {
+                      setClientName("");
+                      setShowClientPanel(false);
+                    }
+                  }}
+                />
+                {nationalId.length === 14 ? (
+                  <p className="text-green-600 text-sm mt-2">
+                    Valid National ID length
                   </p>
+                ) : (
+                  <p className="text-red-500 text-sm mt-2">
+                    National ID must be exactly 14 digits
+                  </p>
+                )}
+              </div>
 
-                  <div className="bg-slate-50 rounded-2xl p-6 text-left mb-8">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p className={labelStyle}>Client</p>
-                        <p className="font-bold">حسين سليم محمد علي</p>
-                      </div>
-                      <div>
-                        <p className={labelStyle}>Quantity</p>
-                        <p className="font-bold text-blue-600">
-                          {qtyRequested.toLocaleString()} Shares
-                        </p>
-                      </div>
-                      <div>
-                        <p className={labelStyle}>Total Amount</p>
-                        <p className="font-bold">
-                          {(qtyRequested * totalPerShare).toLocaleString()} EGP
-                        </p>
-                      </div>
-                      <div>
-                        <p className={labelStyle}>Status</p>
-                        <p className="font-bold text-orange-500">
-                          Awaiting Ops Verfication
-                        </p>
-                      </div>
+              {/* Unified Code Input */}
+              <div>
+                <label className={labelStyle}>Unified Code (MCDR)</label>
+                <input
+                  type="text"
+                  placeholder="Enter Unified Code"
+                  className={inputStyle}
+                />
+              </div>
+
+              {/* Full Width Client Panel */}
+              {showClientPanel && (
+                <div className="col-span-1 md:col-span-2 w-full bg-gradient-to-r from-blue-50 to-white border border-blue-200 rounded-2xl shadow-md p-6 animate-slide-in">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <p className="text-sm text-gray-500">
+                        Client Information
+                      </p>
+                      <h3 className="text-lg font-bold text-blue-700">
+                        {clientName}
+                      </h3>
+                    </div>
+                    <div className="bg-blue-100 text-blue-700 px-4 py-2 rounded-xl text-sm font-semibold">
+                      Eligible Qty: {clientData.eligibleQuantity}
                     </div>
                   </div>
 
-                  <div className="flex gap-4 justify-center">
-                    <button className="bg-slate-900 text-white px-8 py-3 rounded-xl font-bold shadow-lg hover:bg-black transition">
-                      Print Receipt
-                    </button>
-                    <button className="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg hover:bg-blue-700 transition">
-                      Submit to HQ
-                    </button>
+                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                    <div className="bg-white rounded-xl p-4 border">
+                      <p className="text-xs text-gray-500 mb-1">
+                        ID Expire Date
+                      </p>
+                      <p className="font-semibold">{clientData.idExpireDate}</p>
+                    </div>
+
+                    <div className="bg-white rounded-xl p-4 border">
+                      <p className="text-xs text-gray-500 mb-1">Unified Code</p>
+                      <p className="font-semibold">{clientData.unifiedCode}</p>
+                    </div>
+
+                    <div className="bg-white rounded-xl p-4 border">
+                      <p className="text-xs text-gray-500 mb-1">DOB</p>
+                      <p className="font-semibold">{clientData.dob}</p>
+                    </div>
+
+                    <div className="bg-white rounded-xl p-4 border">
+                      <p className="text-xs text-gray-500 mb-1">Age</p>
+                      <p className="font-semibold">{clientData.age} Years</p>
+                    </div>
+
+                    <div className="bg-white rounded-xl p-4 border">
+                      <p className="text-xs text-gray-500 mb-1">ID Status</p>
+                      <p
+                        className={`font-semibold ${
+                          clientData.idStatus === "Active"
+                            ? "text-green-600"
+                            : "text-red-600"
+                        }`}
+                      >
+                        {clientData.idStatus}
+                      </p>
+                    </div>
                   </div>
                 </div>
+              )}
+
+              {/* Other Inputs Continue Below */}
+              <div>
+                <label className={labelStyle}>Client Bank Account</label>
+                <select className={inputStyle}>
+                  <option>Select Account</option>
+                  <option>Current Account - 123456</option>
+                  <option>Savings Account - 987654</option>
+                </select>
               </div>
-            )}
+
+              <div>
+                <label className={labelStyle}>Subscription Event</label>
+                <select className={inputStyle}>
+                  <option>Select Event</option>
+                  <option>Sinawy Olive Oil IPO</option>
+                  <option>Capital Increase - ABC Holdings</option>
+                </select>
+              </div>
+
+              <div>
+                <label className={labelStyle}>Client Type</label>
+                <select className={inputStyle}>
+                  <option>Individual</option>
+                  <option>Corporate</option>
+                  <option>Representative (POA)</option>
+                </select>
+              </div>
+            </div>
           </div>
         )}
 
-        {/* --------------------------- */}
-        {/*       BACK OFFICE MODULE    */}
-        {/* --------------------------- */}
-        {userRole === "BackOffice" && (
-          <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-700">
-            {/* STATS OVERVIEW */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              {[
-                {
-                  label: "Total Subscriptions",
-                  val: subscriptions.length,
-                  color: "text-slate-800",
-                },
-                {
-                  label: "Coverage Ratio",
-                  val: "3.2x",
-                  color: "text-green-600",
-                },
-                { label: "Exceptions", val: "12", color: "text-red-500" },
-                {
-                  label: "Total Cash (EGP)",
-                  val: "1.24M",
-                  color: "text-blue-600",
-                },
-              ].map((stat, i) => (
-                <div
-                  key={i}
-                  className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center"
-                >
-                  <p className={labelStyle}>{stat.label}</p>
-                  <p className={`text-3xl font-black mt-1 ${stat.color}`}>
-                    {stat.val}
-                  </p>
-                </div>
-              ))}
+        {activeTab === 2 && (
+          <div className={sectionStyle}>
+            <h2 className="text-2xl font-semibold mb-6 text-gray-800">
+              Subscription Entry (Ektitab)
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className={labelStyle}>Subscription Type</label>
+                <select className={inputStyle}>
+                  <option>Original Shareholder</option>
+                  <option>Rights Buyer</option>
+                </select>
+              </div>
+
+              <div>
+                <label className={labelStyle}>Quantity Requested</label>
+                <input
+                  type="number"
+                  placeholder="Enter Quantity"
+                  className={inputStyle}
+                />
+              </div>
+
+              <div>
+                <label className={labelStyle}>Share Par Value</label>
+                <input
+                  type="text"
+                  value="1.00 EGP"
+                  readOnly
+                  className={`${inputStyle} bg-gray-100`}
+                />
+              </div>
+
+              <div>
+                <label className={labelStyle}>Issuance Fees (Per Share)</label>
+                <input
+                  type="text"
+                  value="0.25 EGP"
+                  readOnly
+                  className={`${inputStyle} bg-gray-100`}
+                />
+              </div>
+
+              <div>
+                <label className={labelStyle}>Total Amount Due</label>
+                <input
+                  type="text"
+                  value="12,500 EGP"
+                  readOnly
+                  className={`${inputStyle} bg-gray-100`}
+                />
+              </div>
+
+              <div>
+                <label className={labelStyle}>Payment Method</label>
+                <select className={inputStyle}>
+                  <option>Account Block</option>
+                  <option>Direct Deposit</option>
+                  <option>Incoming Transfer</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 3 && (
+          <div className={sectionStyle}>
+            <h2 className="text-2xl font-semibold mb-6 text-gray-800">
+              Document Upload
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className={labelStyle}>National ID Copy</label>
+                <input type="file" className={inputStyle} />
+              </div>
+
+              <div>
+                <label className={labelStyle}>
+                  Signed Subscription Request
+                </label>
+                <input type="file" className={inputStyle} />
+              </div>
+
+              <div>
+                <label className={labelStyle}>Power of Attorney (POA)</label>
+                <input type="file" className={inputStyle} />
+              </div>
+
+              <div>
+                <label className={labelStyle}>Proof of Payment</label>
+                <input type="file" className={inputStyle} />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 4 && (
+          <div className={sectionStyle}>
+            <h2 className="text-2xl font-semibold mb-6 text-gray-800">
+              Transaction Summary & Receipt
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div className="bg-gray-50 rounded-2xl p-4">
+                <p className="text-sm text-gray-500">Transaction ID</p>
+                <p className="font-semibold">IPO-2026-00125</p>
+              </div>
+
+              <div className="bg-gray-50 rounded-2xl p-4">
+                <p className="text-sm text-gray-500">Blocked Amount</p>
+                <p className="font-semibold">12,500 EGP</p>
+              </div>
+
+              <div className="bg-gray-50 rounded-2xl p-4">
+                <p className="text-sm text-gray-500">Quantity</p>
+                <p className="font-semibold">10,000 Shares</p>
+              </div>
+
+              <div className="bg-gray-50 rounded-2xl p-4">
+                <p className="text-sm text-gray-500">Approval Status</p>
+                <p className="font-semibold text-orange-600">
+                  Pending Supervisor Approval
+                </p>
+              </div>
             </div>
 
-            {/* EXCEPTION QUEUE */}
-            <div className={sectionStyle}>
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-                <h2 className="text-2xl font-black text-slate-800 tracking-tight">
-                  Reconciliation Queue
-                </h2>
-                <div className="flex bg-slate-100 p-1 rounded-xl gap-1">
-                  {["All", "Verified", "Shortfall", "Pending Payment"].map(
-                    (status) => (
-                      <button
-                        key={status}
-                        onClick={() => setReconFilter(status)}
-                        className={`px-4 py-1.5 text-xs font-black rounded-lg transition-all ${
-                          reconFilter === status
-                            ? "bg-white text-slate-900 shadow-sm"
-                            : "text-slate-500 hover:text-slate-700"
-                        }`}
-                      >
-                        {status}
-                      </button>
-                    )
-                  )}
-                </div>
-              </div>
+            <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 mb-6">
+              <h3 className="font-semibold text-blue-800 mb-2">
+                Legal Disclaimer
+              </h3>
+              <p className="text-sm text-blue-700">
+                This transaction represents a subscription application. Final
+                allocation depends on total subscription coverage and issuer
+                approval.
+              </p>
+            </div>
 
-              <div className="overflow-x-auto rounded-2xl border border-slate-50">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50/50">
-                      <th className="py-4 font-black text-slate-400 text-[10px] uppercase tracking-widest px-4">
-                        Investor / National ID
-                      </th>
-                      <th className="py-4 font-black text-slate-400 text-[10px] uppercase tracking-widest px-4">
-                        Branch
-                      </th>
-                      <th className="py-4 font-black text-slate-400 text-[10px] uppercase tracking-widest px-4 text-right">
-                        Due (EGP)
-                      </th>
-                      <th className="py-4 font-black text-slate-400 text-[10px] uppercase tracking-widest px-4 text-right">
-                        Paid (EGP)
-                      </th>
-                      <th className="py-4 font-black text-slate-400 text-[10px] uppercase tracking-widest px-4">
-                        Status
-                      </th>
-                      <th className="py-4 font-black text-slate-400 text-[10px] uppercase tracking-widest px-4 text-center">
-                        Control
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredRecon.map((sub) => (
-                      <tr
-                        key={sub.id}
-                        className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors"
-                      >
-                        <td className="py-5 px-4">
-                          <p className="font-bold text-slate-900 leading-tight">
-                            {sub.name}
-                          </p>
-                          <p className="text-xs font-mono text-slate-400 mt-0.5">
-                            {sub.nationalId}
-                          </p>
-                        </td>
-                        <td className="py-5 px-4 text-sm text-slate-500 font-bold">
-                          {sub.branch}
-                        </td>
-                        <td className="py-5 px-4 text-sm font-bold text-slate-400 text-right">
-                          {sub.amountDue.toLocaleString()}
-                        </td>
-                        <td className="py-5 px-4 text-sm font-black text-indigo-600 text-right">
-                          {sub.amountPaid.toLocaleString()}
-                        </td>
-                        <td className="py-5 px-4">
-                          <span
-                            className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter ${
-                              sub.status === "Verified"
-                                ? "bg-green-100 text-green-700"
-                                : sub.status === "Shortfall"
-                                ? "bg-red-100 text-red-700"
-                                : "bg-amber-100 text-amber-700"
-                            }`}
-                          >
-                            {sub.status}
-                          </span>
-                        </td>
-                        <td className="py-5 px-4 text-center">
-                          <div className="flex justify-center gap-4">
-                            <button className="text-blue-600 font-black text-[10px] uppercase hover:underline">
-                              Manual Match
-                            </button>
-                            <button className="text-red-500 font-black text-[10px] uppercase hover:underline">
-                              Refund
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+            <div className="flex flex-wrap gap-4">
+              <button className="bg-blue-600 text-white px-6 py-3 rounded-2xl shadow hover:opacity-90 transition">
+                Submit Transaction
+              </button>
 
-              <div className="mt-8 p-8 bg-slate-900 rounded-[2.5rem] flex flex-col md:flex-row justify-between items-center gap-6 shadow-2xl shadow-slate-200">
-                <div className="flex items-center gap-6">
-                  <div className="w-14 h-14 bg-blue-500 rounded-2xl flex items-center justify-center text-white text-2xl shadow-inner">
-                    ↑
-                  </div>
-                  <div className="text-center md:text-left">
-                    <p className="text-white font-black text-lg">
-                      Bank Statement Integration
-                    </p>
-                    <p className="text-slate-400 text-sm max-w-xs">
-                      Upload MT940 or Excel to auto-match funds against
-                      subscriptions.
-                    </p>
-                  </div>
-                </div>
-                <button className="bg-white text-slate-900 px-10 py-4 rounded-2xl font-black text-sm hover:bg-blue-50 transition transform hover:scale-105">
-                  UPLOAD STATEMENT
-                </button>
-              </div>
+              <button className="bg-green-600 text-white px-6 py-3 rounded-2xl shadow hover:opacity-90 transition">
+                Generate Receipt
+              </button>
+
+              <button className="bg-gray-800 text-white px-6 py-3 rounded-2xl shadow hover:opacity-90 transition">
+                Supervisor Approval
+              </button>
             </div>
           </div>
         )}
